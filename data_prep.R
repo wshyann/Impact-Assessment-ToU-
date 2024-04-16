@@ -112,11 +112,26 @@ tariffs = tariffs |>
   mutate(DateTime = dmy_hm(DateTime))
 
 # Merger
-full_data = left_join(full_data, tariffs, by="DateTime")
+full_data = left_join(full_data, tariffs, by="DateTime") |>
+  mutate(Tariff = if_else(is.na(Tariff), "Std", Tariff))
 
 # Dealing with NA values
 full_data = full_data |> filter(is.na(Consumption) == FALSE)
 
+
+
+#---- Seasons and Prices ----
+
+full_data = full_data |> 
+  mutate(Month_number = month(Month),
+         Seasons = if_else(Month_number %in% c(3,4,5), "Spring",
+                           if_else(Month_number %in% c(6,7,8), "Summer",
+                                   if_else(Month_number %in% c(9,10,11), "Fall",
+                                           if_else(Month_number %in% c(12,1,2), "Winter", NA)))),
+         Price = if_else(Tariff == "Low", 0.039,
+                         if_else(Tariff == "Normal", 0.1176,
+                                 if_else(Tariff == "High", 0.6720, 0.14228)))) |>
+  select(-Month_number)
 
 #----- Saving the full dataset -----
 
